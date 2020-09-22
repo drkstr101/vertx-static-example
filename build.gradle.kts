@@ -15,6 +15,7 @@ val junitVersion = "5.3.2"
 
 dependencies {
   implementation("io.vertx:vertx-core:$vertxVersion")
+  implementation("io.vertx:vertx-web:$vertxVersion")
 
   testImplementation("io.vertx:vertx-junit5:$vertxVersion")
   testImplementation("io.vertx:vertx-web-client:$vertxVersion")
@@ -23,7 +24,8 @@ dependencies {
 }
 
 java {
-  sourceCompatibility = JavaVersion.VERSION_1_8
+  sourceCompatibility = JavaVersion.VERSION_11
+  targetCompatibility = JavaVersion.VERSION_11
 }
 
 application {

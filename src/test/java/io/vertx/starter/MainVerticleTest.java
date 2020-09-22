@@ -22,15 +22,40 @@ class MainVerticleTest {
   }
 
   @Test
-  @DisplayName("Check that the server has started")
+  @DisplayName("Check that the server returns greeting")
   void checkServerHasStarted(Vertx vertx, VertxTestContext testContext) {
     WebClient webClient = WebClient.create(vertx);
-    webClient.get(8080, "localhost", "/")
+    webClient.get(8080, "localhost", "/greeting")
       .as(BodyCodec.string())
       .send(testContext.succeeding(response -> testContext.verify(() -> {
         assertEquals(200, response.statusCode());
         assertTrue(response.body().length() > 0);
         assertTrue(response.body().contains("Hello Vert.x!"));
+        testContext.completeNow();
+      })));
+  }
+
+  @Test
+  @DisplayName("Check that the server returns router-root.txt")
+  void checkServerHasRootResource(Vertx vertx, VertxTestContext testContext) {
+    WebClient webClient = WebClient.create(vertx);
+    webClient.get(8080, "localhost", "/router-root.txt")
+      .as(BodyCodec.string())
+      .send(testContext.succeeding(response -> testContext.verify(() -> {
+        assertEquals(200, response.statusCode());
+        testContext.completeNow();
+      })));
+  }
+
+    
+  @Test
+  @DisplayName("Check that the server returns router-package.txt")
+  void checkServerHasPackageResource(Vertx vertx, VertxTestContext testContext) {
+    WebClient webClient = WebClient.create(vertx);
+    webClient.get(8080, "localhost", "/router-package.txt")
+      .as(BodyCodec.string())
+      .send(testContext.succeeding(response -> testContext.verify(() -> {
+        assertEquals(200, response.statusCode());
         testContext.completeNow();
       })));
   }
