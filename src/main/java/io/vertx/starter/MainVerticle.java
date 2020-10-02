@@ -1,5 +1,8 @@
 package io.vertx.starter;
 
+import io.vertx.config.ConfigRetriever;
+import io.vertx.config.ConfigRetrieverOptions;
+import io.vertx.config.ConfigStoreOptions;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -7,6 +10,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.JksOptions;
@@ -38,22 +42,42 @@ public class MainVerticle extends AbstractVerticle {
 		vertx.deployVerticle(new MainVerticle());
 	}
 
+	private static ConfigRetriever configRetriever(final Vertx vertx) {
+
+		final String configPath = System.getenv("VERTX_CONFIG_PATH");
+		logger.info("VERTX_CONFIG_PATH: " + configPath);
+
+		final ConfigStoreOptions fileStore = new ConfigStoreOptions()
+				.setType("file")
+				.setConfig(new JsonObject().put("path", (configPath == null) ? "conf/config.json" : configPath));
+
+		final ConfigStoreOptions sysPropsStore = new ConfigStoreOptions().setType("sys");
+
+		final ConfigRetrieverOptions options = new ConfigRetrieverOptions()
+				.addStore(fileStore).addStore(sysPropsStore);
+
+		return ConfigRetriever.create(vertx, options);
+	}
+
 	@Override
 	public void start(final Promise<Void> promise) {
+		configRetriever(vertx).getConfig(config -> {
+			final JsonObject c = config.result();
+			logger.info("Loaded Config: " + c.encodePrettily());
 
-		// start servers for http/https handling
-		CompositeFuture.all(startHttpServer(), startHttpsServer())
-				.onComplete(ar -> {
-					if (ar.succeeded()) {
-						promise.complete();
-					} else {
-						promise.fail(ar.cause());
-					}
-				});
+			CompositeFuture.all(startHttpServer(c), startHttpsServer(c))
+					.onComplete(ar -> {
+						if (ar.succeeded()) {
+							promise.complete();
+						} else {
+							promise.fail(ar.cause());
+						}
+					});
+		});
 
 	}
 
-	private Future<Void> startHttpServer() {
+	private Future<Void> startHttpServer(final JsonObject config) {
 		final Promise<Void> promise = Promise.promise();
 
 		final Router router = Router.router(vertx);
@@ -63,21 +87,23 @@ public class MainVerticle extends AbstractVerticle {
 		router.post().handler(BodyHandler.create());
 		router.route().handler(StaticHandler.create());
 
-		final int port = config().getInteger(CONFIG_HTTP_PORT, 80);
-		final String address = config().getString(CONFIG_ADDRESS, "0.0.0.0");
+		final int port = config.getInteger(CONFIG_HTTP_PORT, 80);
+		final String address = config.getString(CONFIG_ADDRESS, "0.0.0.0");
 		vertx.createHttpServer()
 				.requestHandler(router)
 				.listen(port, address, ar -> {
 					if (ar.succeeded()) {
+						logger.info("HTTP Server Ready: " + ar.result());
 						promise.complete();
 					} else {
+						ar.cause().printStackTrace();
 						promise.fail(ar.cause());
 					}
 				});
 		return promise.future();
 	}
 
-	private Future<Void> startHttpsServer() {
+	private Future<Void> startHttpsServer(final JsonObject config) {
 		final Promise<Void> promise = Promise.promise();
 		final Router router = Router.router(vertx);
 
@@ -90,10 +116,10 @@ public class MainVerticle extends AbstractVerticle {
 		router.post().handler(BodyHandler.create());
 		router.get("/greeting").handler(req -> req.response().end("Hello Vert.x!"));
 
-		final int port = config().getInteger(CONFIG_HTTPS_PORT, 443);
-		final String address = config().getString(CONFIG_ADDRESS, "0.0.0.0");
-		final String certPath = config().getString(CONFIG_CA_PATH, "keystore/test-keystore.jks");
-		final String certKey = config().getString(CONFIG_CA_KEY, "secret");
+		final int port = config.getInteger(CONFIG_HTTPS_PORT, 443);
+		final String address = config.getString(CONFIG_ADDRESS, "0.0.0.0");
+		final String certPath = config.getString(CONFIG_CA_PATH, "keystore/test-keystore.jks");
+		final String certKey = config.getString(CONFIG_CA_KEY, "secret");
 
 		final JksOptions jksConfig = new JksOptions()
 				.setPath(certPath)
@@ -107,8 +133,10 @@ public class MainVerticle extends AbstractVerticle {
 				.requestHandler(router)
 				.listen(port, address, ar -> {
 					if (ar.succeeded()) {
+						logger.info("HTTPS Server Ready: " + ar.result());
 						promise.complete();
 					} else {
+						ar.cause().printStackTrace();
 						promise.fail(ar.cause());
 					}
 				});

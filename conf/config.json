@@ -1,0 +1,7 @@
+{
+	"server.address": "0.0.0.0",
+	"server.ca.path": "conf/test-keystore.jks",
+	"server.ca.key": "secret",
+	"server.http.port": 8080,
+	"server.https.port": 4343
+}
