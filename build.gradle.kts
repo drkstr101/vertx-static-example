@@ -3,7 +3,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 plugins {
   java
   application
-  id("com.github.johnrengelman.shadow") version "4.0.3"
+  id("com.github.johnrengelman.shadow") version "6.0.0"
 }
 
 repositories {
