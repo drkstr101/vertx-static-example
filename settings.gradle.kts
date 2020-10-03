@@ -1,1 +1,1 @@
-rootProject.name = "vertx-static-example"
+rootProject.name = "vertx-web-example"
