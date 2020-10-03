@@ -41,11 +41,11 @@ public class Http2ServerVerticle extends AbstractVerticle {
 
 	private HttpServerOptions createOptions(final boolean http2) {
 
-		final String host = config().getString(Config.ADDRESS, "localhost");
+		final String host = config().getString(Config.HOST, "localhost");
 
 		final HttpServerOptions serverOptions = new HttpServerOptions()
-				.setPort(http2 ? config().getInteger(Config.HTTPS_PORT, 8443)
-						: config().getInteger(Config.HTTP_PORT, 8080))
+				.setPort(http2 ? config().getInteger(Config.HTTP2_PORT, 8443)
+						: config().getInteger(Config.HTTP1_PORT, 8080))
 				.setHost(host);
 
 		if (http2) {
