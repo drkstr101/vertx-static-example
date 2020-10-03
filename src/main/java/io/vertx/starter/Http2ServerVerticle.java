@@ -69,12 +69,11 @@ public class Http2ServerVerticle extends AbstractVerticle {
 		final Promise<Void> promise = Promise.promise();
 
 		final Router router = Router.router(vertx);
+		router.route().handler(LoggerHandler.create());
 		router.get("/greeting")
 				.handler(ResponseContentTypeHandler.create())
 				.handler(this::greetingHandler);
-		router.route().handler(LoggerHandler.create());
-		router.post().handler(BodyHandler.create());
-		router.route().handler(StaticHandler.create());
+		router.route().handler(this::http1RediretHandler);
 
 		http1 = vertx.createHttpServer(createOptions(false)).requestHandler(router);
 		http1.listen(ar -> {
@@ -117,6 +116,12 @@ public class Http2ServerVerticle extends AbstractVerticle {
 
 	private void greetingHandler(final RoutingContext context) {
 		context.response().end("Hello Vert.x!");
+	}
+
+	private void http1RediretHandler(final RoutingContext context) {
+		final String redirectTo = context.request().absoluteURI().replace("http", "https");
+		context.response().setStatusCode(302)
+				.putHeader("Location", redirectTo).end();
 	}
 
 }
