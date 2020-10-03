@@ -10,8 +10,10 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.JksOptions;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.LoggerHandler;
+import io.vertx.ext.web.handler.ResponseContentTypeHandler;
 import io.vertx.ext.web.handler.StaticHandler;
 
 public class Http2ServerVerticle extends AbstractVerticle {
@@ -67,7 +69,9 @@ public class Http2ServerVerticle extends AbstractVerticle {
 		final Promise<Void> promise = Promise.promise();
 
 		final Router router = Router.router(vertx);
-		router.get("/greeting").handler(req -> req.response().end("Hello Vert.x!"));
+		router.get("/greeting")
+				.handler(ResponseContentTypeHandler.create())
+				.handler(this::greetingHandler);
 		router.route().handler(LoggerHandler.create());
 		router.post().handler(BodyHandler.create());
 		router.route().handler(StaticHandler.create());
@@ -93,7 +97,9 @@ public class Http2ServerVerticle extends AbstractVerticle {
 		router.route().handler(StaticHandler.create());
 		router.route().handler(LoggerHandler.create());
 		router.post().handler(BodyHandler.create());
-		router.get("/greeting").handler(req -> req.response().end("Hello Vert.x!"));
+		router.get("/greeting")
+				.handler(ResponseContentTypeHandler.create())
+				.handler(this::greetingHandler);
 
 		http2 = vertx.createHttpServer(createOptions(true)).requestHandler(router);
 		http2.listen(ar -> {
@@ -107,6 +113,10 @@ public class Http2ServerVerticle extends AbstractVerticle {
 		});
 
 		return promise.future();
+	}
+
+	private void greetingHandler(final RoutingContext context) {
+		context.response().end("Hello Vert.x!");
 	}
 
 }
